@@ -243,6 +243,7 @@ static void evaluateTypedMessage(params *p, char **buffer) {
 
 @end
 
+static BOOL autoPollsMessages;
 static NSTimer *pollTimer;
 static PdMessageHandler *messageHandler;
 
@@ -256,7 +257,8 @@ static PdMessageHandler *messageHandler;
   libpd_symbolhook = (t_libpd_symbolhook) symbolHook;
   libpd_listhook = (t_libpd_listhook) listHook;
   libpd_messagehook = (t_libpd_messagehook) messageHook;   
-  
+
+  autoPollsMessages = YES;
   messageHandler = [[PdMessageHandler alloc] init];
   libpd_init();
 }
@@ -288,7 +290,7 @@ static PdMessageHandler *messageHandler;
   [newDelegate retain];
   [delegate release];
   delegate = newDelegate;
-  if (delegate && !pollTimer) {
+  if (delegate && autoPollsMessages && !pollTimer) {
     pollTimer = [NSTimer timerWithTimeInterval:0.02 target:messageHandler selector:@selector(pollQueue:) userInfo:nil repeats:YES];
     [[NSRunLoop mainRunLoop] addTimer:pollTimer forMode:NSRunLoopCommonModes];
   }
@@ -345,6 +347,22 @@ static PdMessageHandler *messageHandler;
     return libpd_finish_message([receiverName cStringUsingEncoding:NSASCIIStringEncoding],
                                 [message cStringUsingEncoding:NSASCIIStringEncoding]);
   }
+}
+
++ (void)setAutoPollsMessages:(BOOL)shouldAutoPoll {
+  if (!shouldAutoPoll && pollTimer) {
+    [pollTimer invalidate];
+    pollTimer = nil;
+  }
+  autoPollsMessages = shouldAutoPoll;
+}
+
++ (BOOL)autoPollsMessages {
+  return autoPollsMessages;
+}
+
++ (void)pollMessages {
+	[messageHandler pollQueue:nil];
 }
 
 + (void)clearSearchPath {
