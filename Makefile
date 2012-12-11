@@ -93,15 +93,17 @@ PDJAVA_DIR = $(PDJAVA_BUILD)/org/puredata/core/natives/$(PDNATIVE_PLATFORM)/$(PD
 PDJAVA_NATIVE = $(PDJAVA_DIR)/$(SOLIB_PREFIX)pdnative.$(PDNATIVE_SOLIB_EXT)
 PDJAVA_JAR = libs/libpd.jar
 
-CFLAGS = -DPD -DHAVE_UNISTD_H -DUSEAPI_DUMMY -I./pure-data/src \
-         -I./libpd_wrapper $(PLATFORM_CFLAGS)
+LIBPD_CFLAGS := -DPD -DHAVE_UNISTD_H -DUSEAPI_DUMMY \
+		-I./pure-data/src \
+		-I./libpd_wrapper \
+		$(PLATFORM_CFLAGS)
 
 .PHONY: libpd csharplib javalib clean clobber
 
 libpd: $(LIBPD)
 
 $(LIBPD): ${PD_FILES:.c=.o}
-	$(CC) -o $(LIBPD) $^ $(LDFLAGS) -lm -lpthread 
+	$(CC) $(LIBPD_CFLAGS) -o $(LIBPD) $^ $(LDFLAGS) -lm -lpthread
 
 javalib: $(PDJAVA_JAR)
 
@@ -111,7 +113,7 @@ $(JNIH_FILE): $(JAVA_BASE)
 
 $(PDJAVA_NATIVE): ${PD_FILES:.c=.o} ${JNI_FILE:.c=.o}
 	mkdir -p $(PDJAVA_DIR)
-	$(CC) -o $(PDJAVA_NATIVE) $^ -lm -lpthread $(JAVA_LDFLAGS) 
+	$(CC) $(LIBPD_CFLAGS) -o $(PDJAVA_NATIVE) $^ -lm -lpthread $(JAVA_LDFLAGS)
 	cp $(PDJAVA_NATIVE) libs/
 
 $(PDJAVA_JAR): $(PDJAVA_NATIVE) $(PDJAVA_JAR_CLASSES)
